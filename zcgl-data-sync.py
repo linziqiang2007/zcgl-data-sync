@@ -39,7 +39,7 @@ class ConnectMysql(object):
         trigger_result_list = cur.fetchall()
         print('本次需要更新记录 '+str(len(trigger_result_list)) + ' 条')
         updateTabkesSet = set()
-        # updateIdSet = set()
+        updateIdSet = []
         updateTabkesDict = {}   #字典存放表名:表字段列表
 
         for triggerResult in trigger_result_list:
@@ -75,7 +75,7 @@ class ConnectMysql(object):
                     #如果发现表中已经有此行数据（根据主键或者唯一索引判断）则先删除此行数据，然后插入新的数据。 2. 否则没有此行数据的话，直接插入新数据。
                     #插入数据的表必须有主键或者是唯一索引！否则的话，replace into 会直接插入数据，这将导致表中出现重复的数据。
                     replaceSql = 'replace into ' + str(triggerResult[1]) + ' values (' + param[0:-1] + ')'
-                    # print (replaceSql)
+                    print (replaceSql)
                     cur_pre.executemany(replaceSql, resuleOne)
                     conn_pre.commit()
                     updateCount+=1
@@ -91,7 +91,21 @@ class ConnectMysql(object):
                         break
             if(5!=errorcount):
                 print('表 ',triggerResult[1],triggerResult[0], ' 更新完成')
+                updateIdSet.append(str(triggerResult[0]))
         print( '本次更新完成'+str(updateCount)+'条')
+
+        ##已更新成功数据移动到记录历史表
+        if len(updateIdSet)>0:
+            try:
+                cur.execute("select *,now() from iam_trigger_record where table_id IN ("+str(updateIdSet)[1:-1]+")")
+                updatedList = cur.fetchall()
+                print("移动记录表 "+str(len(updatedList)) + " 条数据到历史表")
+                cur.executemany("replace into iam_his_trigger_record VALUES (%s,%s,%s,%s,%s,%s)",updatedList)
+                cur.execute("delete from iam_trigger_record where table_id IN ("+str(updateIdSet)[1:-1]+")")
+                conn.commit()
+            except Exception as e:
+                print(e)
+
         cur_pre.close()
         conn_pre.close()
         cur.close()
