@@ -17,7 +17,7 @@ class ConnectMysql(object):
         #需要同步的数据库
         conn = pymysql.connect(
             host="10.4.1.37",
-            #host="59.211.216.20",
+            # host="59.211.216.20",
             port=3306,
             user="root",
             passwd="Cloud@iam.com2019",
@@ -27,7 +27,7 @@ class ConnectMysql(object):
         #前置库
         conn_pre = pymysql.connect(
             host="10.4.1.41",
-            #host="59.211.216.20",
+            # host="59.211.216.21",
             port=3306,
             user="root",
             passwd="Cloud@iam.com2019",
@@ -55,7 +55,8 @@ class ConnectMysql(object):
                 updateTabkesColumn+=str(column_name)
             if 0!= len(updateTabkesColumn):
                 updateTabkesDict[table_name]=updateTabkesColumn.replace("'","").replace("(","").replace(")","")[:-1] #去除最后一个逗号
-        updateCount =0
+        updateCount =0#含process不为4的数据
+        updateCount2 =0
         for triggerResult in trigger_result_list:
             errorcount =0
             while True:
@@ -79,6 +80,7 @@ class ConnectMysql(object):
                         # print (replaceSql)
                         cur_pre.executemany(replaceSql, resuleOne)
                         conn_pre.commit()
+                        updateCount2+=1
                     updateCount+=1
                     break
                 except Exception as e:
@@ -93,7 +95,8 @@ class ConnectMysql(object):
             if(5!=errorcount):
                 print('表 ',triggerResult[1],triggerResult[0], ' 更新完成')
                 updateIdSet.append(str(triggerResult[0]))
-        print( '本次更新完成'+str(updateCount)+'条')
+        print( '本次处理完成（含process不为4的数据）'+str(updateCount)+'条')
+        print( '本次更新完成（已发布数据）'+str(updateCount2)+'条')
 
         ##已更新成功数据移动到记录历史表
         if len(updateIdSet)>0:
