@@ -103,7 +103,7 @@ class ConnectMysql(object):
             try:
                 cur.execute("select *,now() from iam_trigger_record where table_id IN ("+str(updateIdSet)[1:-1]+")")
                 updatedList = cur.fetchall()
-                print("移动记录表 "+str(len(updatedList)) + " 条数据到历史表")
+                print("移动记录表 "+str(len(updatedList)) + " 条数据 "+str(len(updateIdSet))+"个table_id 到历史表")
                 cur.executemany("replace into iam_his_trigger_record VALUES (%s,%s,%s,%s,%s,%s)",updatedList)
                 cur.execute("delete from iam_trigger_record where table_id IN ("+str(updateIdSet)[1:-1]+")")
                 conn.commit()
